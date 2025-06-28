@@ -1,0 +1,44 @@
+---
+- name: Snapshot all relevant host variables
+  hosts: all
+
+  vars:
+    snapshot_vars:
+      - var_under_test
+      - other_var_under_test
+
+  tasks:
+    - name: Accumulate snapshot variable values
+      ansible.builtin.set_fact:
+        snapshot_data: "{{ snapshot_data | default({}) | combine({item: lookup('vars', item, default='undefined')}) }}"
+      loop: "{{ snapshot_vars }}"
+
+    - name: Make sure that "{{ decrypted_snapshot_destination }}" exists
+      ansible.builtin.file:
+        path: "{{ decrypted_snapshot_destination }}"
+        recurse: true
+        state: directory
+      run_once: true
+
+    - name: Write the decrypted snapshot file to its destination
+      ansible.builtin.copy:
+        content: "{{ snapshot_data | to_yaml(default_flow_style=False) }}"
+        dest: "{{ decrypted_snapshot_destination }}/{{ inventory_hostname }}.yml"
+
+    - name: Make sure that "{{ encrypted_snapshot_destination }}" exists
+      ansible.builtin.file:
+        path: "{{ encrypted_snapshot_destination }}"
+        recurse: true
+        state: directory
+      run_once: true
+      when: encrypted_snapshot_destination is defined
+
+    - name: Encrypt the snapshot file and write it to its own destination
+      ansible.builtin.command:
+        argv:
+          - ansible-vault
+          - encrypt
+          - "{{ decrypted_snapshot_destination }}/{{ inventory_hostname }}.yml"
+          - --output
+          - "{{ encrypted_snapshot_destination }}/{{ inventory_hostname }}.yml"
+      when: encrypted_snapshot_destination is defined

@@ -1,0 +1,4 @@
+.venv
+
+snapshots/actual
+snapshots/expected/decrypted
