@@ -86,4 +86,5 @@ include sensitive information, so you should not use it as-is as a part of
 your CI/CD pipelines.
 
 Additionally, for better performance, one may look into caching the results
-of the tests of the hosts for which no variable nor parent group was altered.
+of the tests of the hosts for which no variable nor parent group was altered
+since the latest run.
